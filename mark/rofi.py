@@ -1,5 +1,6 @@
 import asyncio
 import os
+import shutil
 from typing import List, Tuple
 
 
@@ -29,9 +30,17 @@ class Rofi:
         self.mode = "dmenu"
         self.sep = sep
         self.case_insensitive = case_insensitive
-        self.format = format  # i mean
+        self.format = format  # i means index
         self.hover_select = hover_select
         self.proc = None
+
+    def check_rofi_installation(self):
+        """Check if rofi is installed, if not raise Err"""
+        path = shutil.which("rofi")
+        if path is None:
+            raise Exception(
+                "rofi is not installed, make sure to install it with your package manager"
+            )
 
     async def __start_rofi_process(self, args: List) -> Tuple[str, int]:
         self.proc = await asyncio.create_subprocess_exec(
@@ -104,6 +113,7 @@ class Rofi:
         filter: str = "",
         msg: str = "",
     ):
+        self.check_rofi_installation()
         args = self.__get_common_args()
         args = self.__prepare_data(args, items, pre_selected_idx, filter, msg)
         await self.__start_rofi_process(args)
