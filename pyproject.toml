@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name="mark"
+version = "1.0.0"
+authors=[
+    {name="Mohamed Rezk", email="mohrizq895@gmail.com"}
+]
+description=""
+requires-python = ">= 3.4"
+dependencies = [
+    "click",
+    "pyperclip",
+    "PyYAML",
+    "tinydb",
+]
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["bookmark"]
+
+[project.urls]
+Documentation = "https://github.com/mohamedrezk122/mark/blob/master/README.md"
+Repository = "https://github.com/mohamedrezk122/mark"
+Issues = "https://github.com/mohamedrezk122/mark/issues"
+Changelog = "https://github.com/mohamedrezk122/mark/blob/master/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "flake8",
+    "isort", 
+]
+
+[project.scripts]
+mark="mark:cli:main"
+
