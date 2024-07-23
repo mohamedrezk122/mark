@@ -38,7 +38,7 @@ class Rofi:
         """Check if rofi is installed, if not raise Err"""
         path = shutil.which("rofi")
         if path is None:
-            raise Exception(
+            raise RuntimeError(
                 "rofi is not installed, make sure to install it with your package manager"
             )
 
@@ -99,7 +99,9 @@ class Rofi:
         line = f"\0message\x1f{msg}\n"
         return line.encode("utf8")
 
-    def update_data(self, items: List, **kwargs) -> bytes:
+    def update_data(self, items: List = None, **kwargs) -> bytes:
+        if not items:
+            items = [" "]
         rofi_data = f"\0data\x1f{self.itemize(items)}\n"
         for option in kwargs:
             line = f"\0{option}\x1f{kwargs[option]}\n"
