@@ -28,17 +28,13 @@ class Server:
         writer.write("quit".encode("utf8"))
         await writer.drain()
 
-    async def __handle_root_selection(
-        self, writer: asyncio.StreamWriter, root: str
-    ):
+    async def __handle_root_selection(self, writer: asyncio.StreamWriter, root: str):
         # TODO: be presistant ?
         title, url = self.db.get_bookmark(self.parent_path, root)
         self.on_selection(title, url)
         await self.__close_connection(writer)
 
-    async def __handle_path_selection(
-        self, writer: asyncio.StreamWriter, path: str
-    ):
+    async def __handle_path_selection(self, writer: asyncio.StreamWriter, path: str):
         # TODO: handle hierarchical paths
         self.parent_path = path
         items = self.db.list_bookmarks(path)
@@ -60,7 +56,7 @@ class Server:
         kwargs = {
             "prompt": "insert url or location",
             # TODO: paste key
-            "message": "Paste with key"
+            "message": "Paste with key",
         }
         if type_ == "url":
             kwargs["prompt"] = "insert title"
