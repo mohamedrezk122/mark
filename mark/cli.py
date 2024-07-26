@@ -2,13 +2,16 @@ import asyncio
 
 import click
 
-from mark.server import Server, copy_selection, open_selection
+from mark.db import DataBase
+from mark.rofi import Rofi
+from mark.server import Server
+from mark.utils import get_free_port
 
 db_files_arg = click.argument(
     "db_files", required=True, nargs=-1, type=click.Path(exists=True)
 )
-output_dir_opt = click.option(
-    "-o", "-output", type=click.Path(), default="output", show_default=True
+output_file_opt = click.option(
+    "-o", "--output", type=click.Path(), default="merged.yaml", show_default=True
 )
 on_selection_opt = click.option(
     "--on-selection",
@@ -20,8 +23,14 @@ on_selection_opt = click.option(
 )
 
 
-async def execute_async_server(db_filename, mode, on_selection=None):
-    async_server = Server(db_filename, mode=mode, on_selection=on_selection)
+async def execute_async_server(db_filename: str, mode: str, on_selection: str = None):
+    port = get_free_port()
+    message = "choose or create dir" if mode == "read" else "choose dir"
+    rofi = Rofi(message=message).setup_client(mode, port)
+    db = DataBase(db_filename)
+    async_server = Server(
+        port, db, mode=mode, rofi_inst=rofi, on_selection=on_selection
+    )
     await asyncio.gather(
         async_server.rofi.open_menu(async_server.db.list_dirs()),
         async_server.run_server(),
@@ -45,13 +54,7 @@ def mark_get_bookmark(db_files, on_selection):
     """
     # TODO: handle multiple files
     db_files = db_files[0]
-    on_selection_funcs = {
-        "copy": copy_selection,
-        "open": open_selection,
-    }
-    asyncio.run(
-        execute_async_server(db_files, "read", on_selection_funcs[on_selection])
-    )
+    asyncio.run(execute_async_server(db_files, "read", on_selection))
 
 
 @cli.command("insert")
