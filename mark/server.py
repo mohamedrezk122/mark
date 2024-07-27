@@ -15,6 +15,7 @@ class Server:
         mode: str = "read",
         rofi_inst: Rofi = None,
         on_selection: str = None,
+        url: str = None,
     ):
         assert mode in ["read", "write"], "mode has to be 'read' or 'write'"
         self.mode = mode
@@ -23,7 +24,9 @@ class Server:
         self.db = db
         self.on_selection = on_selection
         # container for selection tracking
-        self.pack = {"current": 0}
+        self.pack = {}
+        if mode == "write":
+            self.pack = {"current": "path", "url": url, "title": None}
 
     async def __close_connection(self, writer: asyncio.StreamWriter):
         writer.write("quit".encode("utf8"))
@@ -49,20 +52,13 @@ class Server:
         writer.write(data)
         await writer.drain()
 
-    async def __handle_insertion_message(
-        self, writer: asyncio.StreamWriter, type_: str, value: str
+    async def __handle_manual_bookmark_title(
+        self, writer: asyncio.StreamWriter, url: str
     ):
         # TODO: handle hierarchical paths
-        assert type_ in ["path", "url", "title"]
-        self.pack[type_] = value
-        if type_ == "title":
-            return
-        state = "url"
-        if type_ == "url":
-            state = "title"
         kwargs = {
-            # TODO: paste key
-            "message": f"insert {state} (paste with key {self.rofi.paste_key})",
+            "prompt": "title",
+            "message": url,
         }
         data = self.rofi.update_data(None, **kwargs)
         writer.write(data)
@@ -71,12 +67,17 @@ class Server:
     async def __handle_bookmark_insertion(
         self, writer: asyncio.StreamWriter, value: str
     ):
-        # iterate over these modes in this order
-        types = ["path", "url", "title"]
-        type_ = types[self.pack["current"]]
-        await self.__handle_insertion_message(writer, type_, value)
-        self.pack["current"] += 1
-        if self.pack["current"] > 2:
+        if self.pack["current"] == "path":
+            self.pack["path"] = value
+            if self.pack["title"] is None:
+                self.pack["current"] = "title"
+                await self.__handle_manual_bookmark_title(writer, self.pack["url"])
+                return
+
+        if self.pack["current"] == "title":
+            if self.pack["title"] is None:
+                self.pack["title"] = value
+
             self.db.insert_bookmark(
                 self.pack["path"], self.pack["title"], self.pack["url"]
             )
