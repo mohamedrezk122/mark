@@ -3,7 +3,8 @@ format:
 	black mark/ 
 
 lint:
-	flake8 mark/
+	flake8 mark/ --ignore=E501
+
 
 install:
 	pip3 install -e .
