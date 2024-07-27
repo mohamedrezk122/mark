@@ -24,18 +24,13 @@ on_selection_opt = click.option(
 
 
 async def execute_async_server(db_filename: str, mode: str, on_selection: str = None):
-    if mode == "write":
-        import pyperclip
-
-        url = pyperclip.paste()
     port = get_free_port()
     message = "choose or create dir" if mode == "read" else "choose dir"
     rofi = Rofi(message=message).setup_client(mode, port)
     db = DataBase(db_filename)
     async_server = Server(
-        port, db, mode=mode, rofi_inst=rofi, on_selection=on_selection, url=url
+        port, db, mode=mode, rofi_inst=rofi, on_selection=on_selection
     )
-
     await asyncio.gather(
         async_server.rofi.open_menu(async_server.db.list_dirs()),
         async_server.run_server(),
