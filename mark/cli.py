@@ -6,6 +6,7 @@ from mark.db import insert_multiple_bookmarks
 from mark.parser import parse_netscape_bookmark_file
 from mark.server import execute_async_server
 
+
 db_files_arg = click.argument(
     "db_files", required=True, nargs=-1, type=click.Path(exists=True)
 )
@@ -32,7 +33,6 @@ bookmark_file_arg = click.argument(
     "file",
     type=click.Path(exists=True),
 )
-
 
 @click.group()
 def cli():
