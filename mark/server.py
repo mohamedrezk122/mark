@@ -3,8 +3,9 @@ import json
 
 from tinydb import TinyDB
 
+from mark.db import DataBase
 from mark.rofi import Rofi
-from mark.utils import copy_selection, open_selection
+from mark.utils import copy_selection, get_free_port, open_selection
 
 
 class Server:
@@ -114,3 +115,23 @@ class Server:
         )
         async with server:
             await server.serve_forever()
+
+
+async def execute_async_server(db_filename: str, mode: str, on_selection: str = None):
+    url = None
+    if mode == "write":
+        import pyperclip
+
+        url = pyperclip.paste()
+    port = get_free_port()
+    message = "choose or create dir" if mode == "read" else "choose dir"
+    rofi = Rofi(message=message).setup_client(mode, port)
+    db = DataBase(db_filename)
+    async_server = Server(
+        port, db, mode=mode, rofi_inst=rofi, on_selection=on_selection, url=url
+    )
+
+    await asyncio.gather(
+        async_server.rofi.open_menu(async_server.db.list_dirs()),
+        async_server.run_server(),
+    )
