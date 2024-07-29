@@ -1,20 +1,30 @@
 from typing import List, Tuple
 
+import orjson
 from tinydb import Query, TinyDB
 
-from mark.storage import YAMLStorage
+from mark.storage import FasterJSONStorage, YAMLStorage
 
 
 class DataBase:
-    def __init__(self, filetitle: str, trailing_char: str = "\\"):
+    def __init__(self, filename: str, trailing_char: str = "\\", storage="json"):
         assert len(trailing_char) == 1
-        self.db = TinyDB(filetitle, storage=YAMLStorage)
+        if storage == "yaml":
+            self.db = TinyDB(filename, indent=4, storage=YAMLStorage)
+        else:
+            self.db = TinyDB(
+                filename, option=orjson.OPT_INDENT_2, storage=FasterJSONStorage
+            )
         self.trailing_char = trailing_char
 
     def insert_bookmark(self, table: str, bookmark_title: str, url: str):
         table = self.__handle_path(table)
         handle = self.db.table(table)
         handle.insert({"title": bookmark_title, "url": url})
+
+    def insert_multiple(self, table: str, bookmark: List):
+        handle = self.db.table(table)
+        handle.insert_multiple(bookmark)
 
     def is_dir(self, table: str) -> bool:
         table = self.__handle_path(table)
@@ -33,7 +43,8 @@ class DataBase:
 
     def list_bookmarks(self, table: str, is_full: bool = False) -> List:
         table = self.__handle_path(table)
-        handle = self.db.table(table)
+        # cache size is unlimited
+        handle = self.db.table(table, cache_size=30)
         all_rows = handle.all()
         parent = f"{table}{self.trailing_char}" if is_full else ""
         attrs = ["%s%s" % (parent, row.get("title")) for row in all_rows]
@@ -41,3 +52,9 @@ class DataBase:
 
     def list_dirs(self) -> List:
         return [f"{table}{self.trailing_char}" for table in self.db.tables()]
+
+
+def insert_multiple_bookmarks(bookmarks, db_file):
+    db = DataBase(db_file)
+    for table in bookmarks:
+        db.insert_multiple(table, bookmarks[table])
