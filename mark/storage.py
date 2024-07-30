@@ -45,7 +45,6 @@ class FasterJSONStorage(Storage):
         super().__init__()
         self._mode = access_mode
         self.kwargs = kwargs
-        print(kwargs)
         if access_mode not in ("r", "rb", "r+", "rb+"):
             warnings.warn(
                 "Using an `access_mode` other than 'r', 'rb', 'r+' "
