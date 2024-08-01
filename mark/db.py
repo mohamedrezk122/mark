@@ -54,7 +54,7 @@ class DataBase:
         return [f"{table}{self.trailing_char}" for table in self.db.tables()]
 
 
-def insert_multiple_bookmarks(bookmarks, db_file):
+def save_bookmarks_to_db(bookmarks, db_file):
     db = DataBase(db_file)
     for table in bookmarks:
         db.insert_multiple(table, bookmarks[table])
