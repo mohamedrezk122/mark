@@ -57,7 +57,9 @@ class Rofi:
                 "rofi is not installed, make sure to install it with your package manager"
             )
 
-    async def __start_rofi_process(self, args: List, sinput: List = None) -> Tuple:
+    async def __start_rofi_process(
+        self, args: List, sinput: List = None, timeout: int = 50
+    ) -> Tuple:
         stdin = None
         if self.mode == "dmenu":
             stdin = asyncio.subprocess.PIPE
@@ -67,7 +69,16 @@ class Rofi:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await self.proc.communicate(input=sinput)
+        try:
+            stdout, stderr = await asyncio.wait_for(
+                self.proc.communicate(input=sinput), timeout=timeout
+            )
+        except asyncio.exceptions.TimeoutError:
+            try:
+                self.proc.kill()
+            except OSError:
+                pass
+            raise
         if self.proc.returncode == 0:
             self.server_should_exit = True
         return stdout, self.proc.returncode
@@ -148,7 +159,7 @@ class Rofi:
     def send_message(self, msg: str) -> bytes:
         assert self.mode == "script"
         line = f"\0message\x1f{msg}\n"
-        return line.encode("utf8")
+        return line.encode("unicode_escape")
 
     def update_data(self, items: List = None, **kwargs) -> bytes:
         assert self.mode == "script"
@@ -172,7 +183,7 @@ class Rofi:
         args = self.__prepare_data(args, items, pre_selected_idx, filter)
         sinput = None
         if self.mode == "dmenu" and items:
-            sinput = self.itemize(items, dummy=False).encode("utf8")
+            sinput = self.itemize(items, dummy=False).encode("unicode_escape")
         await self.__start_rofi_process(args, sinput)
 
 
