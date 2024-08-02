@@ -46,7 +46,8 @@ if len(sys.argv) > 1:
         }
     )
     client.send(msg.encode("unicode_escape"))
-    received = client.recv(500).decode("unicode_escape")
+    bufsize = 65_535  # maximum buffer size of 64kB
+    received = client.recv(bufsize).decode("unicode_escape")
     if received == "quit":
         client.close()
     else:
