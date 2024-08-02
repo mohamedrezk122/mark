@@ -2,8 +2,8 @@ import socket
 import os
 
 
-def concat(str1: str, str2: str) -> str:
-    return "".join([str1, str2])
+def concat(*args) -> str:
+    return "".join(args)
 
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
