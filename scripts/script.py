@@ -28,8 +28,8 @@ if os.getenv("ROFI_INIT") is not None and os.getenv("ROFI_DATA") is None:
     # don't allow custom inputs in read mode, only choose from listed items
     if os.environ["ROFI_MODE"] == "read":
         no_custom = "\0no-custom\x1ftrue\n"
-    line = "\0data\x1f%s\n%s" % (os.environ["ROFI_INIT"], no_custom)
-    data = concat(data, line)
+    line = "\0markup-rows\x1ftrue\n\0data\x1f%s\n" % os.environ["ROFI_INIT"]
+    data = concat(data, line, no_custom)
     del os.environ["ROFI_INIT"]
     # send initial list to rofi
     print(data)
@@ -45,8 +45,8 @@ if len(sys.argv) > 1:
             "value": sys.argv[1],
         }
     )
-    client.send(msg.encode("utf8"))
-    received = client.recv(500).decode("utf8")
+    client.send(msg.encode("unicode_escape"))
+    received = client.recv(500).decode("unicode_escape")
     if received == "quit":
         client.close()
     else:
