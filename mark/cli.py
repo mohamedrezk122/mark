@@ -5,7 +5,7 @@ from click.core import ParameterSource
 
 from mark.db import export_bookmarks_to_markdown, save_bookmarks_to_db
 from mark.parser import parse_netscape_bookmark_file
-from mark.server import execute_async_server
+from mark.server import Server
 
 db_file_arg = click.argument("db_file", required=True, type=click.Path(exists=True))
 output_file_opt = click.option(
@@ -31,6 +31,12 @@ bookmark_file_arg = click.argument(
     "file",
     type=click.Path(exists=True),
 )
+dir_format_opt = click.option(
+    "--dir-format", type=click.STRING, default="$title/", show_default=True
+)
+entry_format_opt = click.option(
+    "--entry-format", type=click.STRING, default="$title", show_default=True
+)
 
 
 def is_default_option(param):
@@ -53,22 +59,35 @@ def cli():
 @cli.command("get")
 @db_file_arg
 @on_selection_opt
-def mark_get_bookmark(db_file, on_selection):
+@dir_format_opt
+@entry_format_opt
+def mark_get_bookmark(db_file, on_selection, dir_format, entry_format):
     """
     Retrieve a bookmark
     """
     # TODO: handle multiple files
-    asyncio.run(execute_async_server(db_file, "read", on_selection))
+    asyncio.run(
+        Server.execute_async_server(
+            db_file=db_file,
+            mode="read",
+            on_selection=on_selection,
+            dir_format=dir_format,
+            entry_format=entry_format,
+        )
+    )
 
 
 @cli.command("insert")
 @db_file_arg
-def mark_insert_bookmark(db_file):
+@dir_format_opt
+def mark_insert_bookmark(db_file, dir_format):
     """
     Insert a bookmark
     """
     # TODO: handle multiple files
-    asyncio.run(execute_async_server(db_file, "write"))
+    asyncio.run(
+        Server.execute_async_server(db_file, mode="write", dir_format=dir_format)
+    )
 
 
 @cli.command("import")
