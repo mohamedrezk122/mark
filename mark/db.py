@@ -63,7 +63,7 @@ def save_bookmarks_to_db(bookmarks, db_file):
         db.insert_multiple(table, bookmarks[table])
 
 
-def convert_bookmarks_to_markdown(db_file: str, filepath: str, heading: int):
+def export_bookmarks_to_markdown(db_file: str, filepath: str, heading: int):
 
     assert 1 <= heading <= 6
     # use append option "a" to avoid removing current content of the file
