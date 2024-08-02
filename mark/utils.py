@@ -1,18 +1,6 @@
 import os
 import platform
-import socket
 import subprocess
-from contextlib import closing
-
-
-def get_free_port():
-    # avoid hard-coded ports
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as soc:
-        # choose an available port by passing 0
-        soc.bind(("localhost", 0))
-        # allow port reuse
-        soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        return soc.getsockname()[1]
 
 
 def copy_selection(title: str, url: str):
