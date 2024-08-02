@@ -3,7 +3,7 @@ import asyncio
 import click
 from click.core import ParameterSource
 
-from mark.db import save_bookmarks_to_db
+from mark.db import convert_bookmarks_to_markdown, save_bookmarks_to_db
 from mark.parser import parse_netscape_bookmark_file
 from mark.server import execute_async_server
 
@@ -25,7 +25,7 @@ format_opt = click.option(
     default="html",
     show_default=True,
     show_choices=True,
-    type=click.Choice(["html", "markdown"], case_sensitive=False),
+    type=click.Choice(["html", "md"], case_sensitive=False),
 )
 bookmark_file_arg = click.argument(
     "file",
@@ -33,7 +33,7 @@ bookmark_file_arg = click.argument(
 )
 
 
-def is_default(param):
+def is_default_option(param):
     """
     Return true if the click option is not passed to cmd, and the default value
     is used
@@ -82,12 +82,33 @@ def mark_import_bookmarks(file, format, output):
     if format == "html":
         bookmarks = parse_netscape_bookmark_file(file)
     else:
-        raise NotImplementedError()
+        raise NotImplementedError("Not yet implemented for markdown")
 
-    if is_default("output"):
-        output = "import_bookmarks.json"
+    if is_default_option("output"):
+        output = "imported_bookmarks.json"
 
     save_bookmarks_to_db(bookmarks, output)
+
+
+@cli.command("export")
+@db_file_arg
+@format_opt
+@output_file_opt
+def mark_export_bookmarks(db_file, format, output):
+    """
+    Export bookmarks to html or markdown
+    """
+
+    if is_default_option("output"):
+        output = f"exported_bookmarks.{format}"
+    else:
+        if not output.endswith(format):
+            output = f"{output}.{format}"
+
+    if format == "md":
+        convert_bookmarks_to_markdown(db_file, output, heading=3)
+    else:
+        raise NotImplementedError("Not yet implemented for html")
 
 
 if __name__ == "__main__":

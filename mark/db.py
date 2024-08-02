@@ -8,7 +8,7 @@ from mark.storage import FasterJSONStorage, YAMLStorage
 
 class DataBase:
     def __init__(self, filename: str, trailing_char: str = "\\", storage="json"):
-        assert len(trailing_char) == 1
+        assert len(trailing_char) <= 1
         if storage == "yaml":
             self.db = TinyDB(filename, indent=4, storage=YAMLStorage)
         else:
@@ -53,8 +53,38 @@ class DataBase:
     def list_dirs(self) -> List:
         return [f"{table}{self.trailing_char}" for table in self.db.tables()]
 
+    def get_table_handle(self, table_name: str):
+        return self.db.table(table_name)
+
 
 def save_bookmarks_to_db(bookmarks, db_file):
     db = DataBase(db_file)
     for table in bookmarks:
         db.insert_multiple(table, bookmarks[table])
+
+
+def convert_bookmarks_to_markdown(db_file: str, filepath: str, heading: int):
+
+    assert 1 <= heading <= 6
+    # use append option "a" to avoid removing current content of the file
+    file = open(filepath, "a+")
+    heading_level = "#" * heading
+
+    def write_folder(folder_name, rows):
+        folder_header = f"\n\n\n{heading_level} {folder_name}\n\n\n"
+        file.write(folder_header)
+        for row in rows:
+            title = row.get("title")
+            url = row.get("url")
+            line = f"[{title}]({url})\n\n"
+            file.write(line)
+
+    db = DataBase(db_file, trailing_char="")
+    folders = db.list_dirs()
+    for folder in folders:
+        all_rows = db.get_table_handle(folder).all()
+        write_folder(folder, all_rows)
+
+    # force the data to os buffer
+    file.flush()
+    file.close()
