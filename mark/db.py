@@ -32,7 +32,9 @@ class DataBase:
         handle = self.db.table(table)
         return title, handle.search(Query().title == title)[0]["url"]
 
-    def list_bookmarks(self, table: str, template: Template) -> List:
+    def list_bookmarks(
+        self, table: str, template: Template = Template("$title")
+    ) -> List:
         # cache size is unlimited
         handle = self.db.table(table, cache_size=30)
         all_rows = handle.all()
@@ -42,7 +44,7 @@ class DataBase:
         }
         return mapping
 
-    def list_dirs(self, template: Template) -> List:
+    def list_dirs(self, template: Template = Template("$title")) -> List:
         return {
             template.safe_substitute(title=table): table for table in self.db.tables()
         }
@@ -73,7 +75,7 @@ def export_bookmarks_to_markdown(db_file: str, filepath: str, heading: int):
             line = f"[{title}]({url})\n\n"
             file.write(line)
 
-    db = DataBase(db_file, trailing_char="")
+    db = DataBase(db_file)
     folders = db.list_dirs()
     for folder in folders:
         all_rows = db.get_table_handle(folder).all()
