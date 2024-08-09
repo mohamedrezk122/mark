@@ -100,3 +100,15 @@ def get_url_and_title(infer_title):
     except TimeoutError:
         pass
     return url, title
+
+
+def are_urls_equal(url1, url2):
+    from urllib.parse import urlparse, parse_qsl, unquote_plus
+
+    def get_url_parts(url):
+        parts = urlparse(url)
+        query = frozenset(parse_qsl(parts.query))
+        path = unquote_plus(parts.path)
+        parts = parts._replace(query=query, path=path)
+
+    return get_url_parts(url1) == get_url_parts(url2)

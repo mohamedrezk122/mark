@@ -5,6 +5,7 @@ import orjson
 from tinydb import Query, TinyDB
 
 from mark.storage import FasterJSONStorage, YAMLStorage
+from mark.utils import are_urls_equal
 
 
 class DataBase:
@@ -16,9 +17,9 @@ class DataBase:
                 filename, option=orjson.OPT_INDENT_2, storage=FasterJSONStorage
             )
 
-    def insert_bookmark(self, table: str, bookmark_title: str, url: str):
+    def insert_bookmark(self, table: str, url: str, title: str):
         handle = self.db.table(table)
-        handle.insert({"title": bookmark_title, "url": url})
+        handle.insert({"title": title, "url": url})
 
     def insert_multiple(self, table: str, bookmark: List):
         handle = self.db.table(table)
@@ -27,16 +28,21 @@ class DataBase:
     def is_dir(self, table: str) -> bool:
         return table in self.db.tables()
 
-    def get_bookmark(self, table: str, title: str) -> Tuple[str, str]:
+    def get_bookmark(self, tablename: str, title: str) -> Tuple[str, str]:
         # TODO: handle title bein in path
-        handle = self.db.table(table)
+        handle = self.db.table(tablename)
         return title, handle.search(Query().title == title)[0]["url"]
 
+    def bookmark_exists_in_table(self, tablename, url):
+        handle = self.db.table(tablename)
+        query = handle.search(Query().url.test(are_urls_equal, url))
+        return len(query) > 0
+
     def list_bookmarks(
-        self, table: str, template: Template = Template("$title")
+        self, tablename: str, template: Template = Template("$title")
     ) -> List:
         # cache size is unlimited
-        handle = self.db.table(table, cache_size=30)
+        handle = self.db.table(tablename, cache_size=30)
         all_rows = handle.all()
         mapping = {
             template.safe_substitute(title=row.get("title")): row.get("title")
@@ -46,15 +52,38 @@ class DataBase:
 
     def list_dirs(self, template: Template = Template("$title")) -> List:
         return {
-            template.safe_substitute(title=table): table for table in self.db.tables()
+            template.safe_substitute(title=table): table
+            for table in self.db.tables()
         }
 
-    def get_table_handle(self, table_name: str):
-        return self.db.table(table_name)
+    def get_table_handle(self, tablename: str):
+        return self.db.table(tablename)
 
 
-def save_bookmarks_to_db(bookmarks, db_file):
+def prune_duplicates(db, bookmarks):
+    """
+     if the url is already there under table then ignore this bookmark
+    """
+    for table in bookmarks:
+        # skip un-necessary calls if the table is not in the db
+        if not db.is_dir(table):
+            continue
+        folder = []
+        n = len(bookmarks[table])
+        for i in range(n):
+            bookmark = bookmarks[table][i]
+            if not db.bookmark_exists_in_table(table, bookmark["url"]):
+                folder.append(bookmark)
+        # update folder list
+        bookmarks[table] = folder
+    return bookmarks
+
+
+def save_bookmarks_to_db(bookmarks, db_file, no_duplicates):
     db = DataBase(db_file)
+    if no_duplicates:
+        bookmarks = prune_duplicates(db, bookmarks)
+    # do the insertion
     for table in bookmarks:
         db.insert_multiple(table, bookmarks[table])
 

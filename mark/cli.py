@@ -39,6 +39,7 @@ entry_format_opt = click.option(
 )
 clean_opt = click.option("--clean-title", is_flag=True)
 infer_title = click.option("--infer-title", is_flag=True)
+no_duplicates = click.option("--no-duplicates", is_flag=True)
 
 
 def is_default_option(param):
@@ -100,7 +101,8 @@ def mark_insert_bookmark(db_file, dir_format, infer_title):
 @format_opt
 @output_file_opt
 @clean_opt
-def mark_import_bookmarks(file, format, output, clean_title):
+@no_duplicates
+def mark_import_bookmarks(file, format, output, clean_title, no_duplicates):
     """
     Import bookmarks from other browsers
     """
@@ -112,7 +114,7 @@ def mark_import_bookmarks(file, format, output, clean_title):
     if is_default_option("output"):
         output = "imported_bookmarks.json"
 
-    save_bookmarks_to_db(bookmarks, output)
+    save_bookmarks_to_db(bookmarks, output, no_duplicates)
 
 
 @cli.command("export")
