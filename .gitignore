@@ -7,3 +7,6 @@ __pycache__
 notes.*
 test.*
 todo.txt
+db*.json
+*.html
+*log
