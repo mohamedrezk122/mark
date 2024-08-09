@@ -56,7 +56,8 @@ class Rofi:
         path = shutil.which("rofi")
         if path is None:
             raise RuntimeError(
-                "rofi is not installed, make sure to install it with your package manager"
+                "rofi is not installed, make sure to install it with your"
+                " package manager"
             )
 
     async def __start_rofi_process(

@@ -8,8 +8,13 @@ from tinydb import TinyDB
 
 from mark.db import DataBase
 from mark.rofi import Rofi
-from mark.utils import (copy_selection, decode_message, encode_message,
-                        get_url_and_title, open_selection)
+from mark.utils import (
+    copy_selection,
+    decode_message,
+    encode_message,
+    get_url_and_title,
+    open_selection,
+)
 
 
 class Server:
@@ -56,7 +61,7 @@ class Server:
         self.pack["path"] = self.mapping[path]
         self.mapping = self.db.list_bookmarks(self.pack["path"], self.entry_format)
         kwargs = {
-            "message": f"<b>{self.pack["path"]}/</b>",
+            "message": "<b>%s/</b>" % self.pack["path"],
             "markup-rows": "true",
         }
         data = self.rofi.update_data(list(self.mapping.keys()), **kwargs)

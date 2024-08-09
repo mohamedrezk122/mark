@@ -91,7 +91,10 @@ def mark_insert_bookmark(db_file, dir_format, infer_title):
     # TODO: handle multiple files
     asyncio.run(
         Server.execute_async_server(
-            db_file, mode="write", dir_format=dir_format, infer_title=infer_title
+            db_file,
+            mode="write",
+            dir_format=dir_format,
+            infer_title=infer_title,
         )
     )
 
