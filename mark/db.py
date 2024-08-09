@@ -39,8 +39,7 @@ class DataBase:
 
     def bookmark_exists_in_table(self, tablename, url):
         handle = self.db.table(tablename)
-        query = handle.search(Query().url.test(are_urls_equal, url))
-        return len(query) > 0
+        return handle.contains(Query().url.test(are_urls_equal, url))
 
     def list_bookmarks(
         self, tablename: str, template: Template = Template("$title")
@@ -80,6 +79,8 @@ def prune_duplicates(db, bookmarks):
             bookmark = bookmarks[table][i]
             if not db.bookmark_exists_in_table(table, bookmark["url"]):
                 folder.append(bookmark)
+            else:
+                print("jerer")
         # update folder list
         bookmarks[table] = folder
     return bookmarks
