@@ -8,13 +8,8 @@ from tinydb import TinyDB
 
 from mark.db import DataBase
 from mark.rofi import Rofi
-from mark.utils import (
-    copy_selection,
-    decode_message,
-    encode_message,
-    get_url_and_title,
-    open_selection,
-)
+from mark.utils import (copy_selection, decode_message, encode_message,
+                        get_url_and_title, open_selection)
 
 
 class Server:

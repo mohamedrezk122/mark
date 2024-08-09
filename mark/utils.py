@@ -103,7 +103,7 @@ def get_url_and_title(infer_title):
 
 
 def are_urls_equal(url1, url2):
-    from urllib.parse import urlparse, parse_qsl, unquote_plus
+    from urllib.parse import parse_qsl, unquote_plus, urlparse
 
     def get_url_parts(url):
         parts = urlparse(url)
