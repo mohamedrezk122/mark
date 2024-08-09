@@ -4,6 +4,8 @@ import shutil
 from pathlib import Path
 from typing import List, Tuple
 
+from mark.utils import encode_message
+
 
 class Rofi:
     """
@@ -158,18 +160,18 @@ class Rofi:
 
     def send_message(self, msg: str) -> bytes:
         assert self.mode == "script"
-        line = f"\0message\x1f{msg}\n"
-        return line.encode("unicode_escape")
+        line = f"\x00message\x1f{msg}\n"
+        return encode_message(line)
 
     def update_data(self, items: List = None, **kwargs) -> bytes:
         assert self.mode == "script"
         if not items:
             items = [" "]
-        rofi_data = f"\0data\x1f{self.itemize(items)}\n"
+        rofi_data = f"\x00data\x1f{self.itemize(items)}\n"
         for option in kwargs:
-            line = f"\0{option}\x1f{kwargs[option]}\n"
+            line = f"\x00{option}\x1f{kwargs[option]}\n"
             rofi_data = "".join([rofi_data, line])
-        return rofi_data.encode("utf8")
+        return encode_message(rofi_data)
 
     async def open_menu(
         self,
@@ -183,7 +185,7 @@ class Rofi:
         args = self.__prepare_data(args, items, pre_selected_idx, filter)
         sinput = None
         if self.mode == "dmenu" and items:
-            sinput = self.itemize(items, dummy=False).encode("unicode_escape")
+            sinput = encode_message(self.itemize(items, dummy=False))
         await self.__start_rofi_process(args, sinput)
 
 
