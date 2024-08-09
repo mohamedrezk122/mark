@@ -66,7 +66,7 @@ def sync_infer_url_title(url):
     try:
         soup = BeautifulSoup(urlopen(url, timeout=2), "lxml")
         return soup.title.string
-    except TimeoutError:
+    except Exception:
         return None
 
 
@@ -80,3 +80,23 @@ def clean_bookmark_title(title):
         .strip()
     )
 
+
+def encode_message(msg):
+    return msg.encode("utf-8")
+
+
+def decode_message(msg):
+    return msg.decode("utf-8")
+
+
+def get_url_and_title(infer_title):
+    import pyperclip
+
+    url, title = pyperclip.paste(), None
+    if not infer_title:
+        return url, title
+    try:
+        title = sync_infer_url_title(url)
+    except TimeoutError:
+        pass
+    return url, title

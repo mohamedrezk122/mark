@@ -37,9 +37,8 @@ dir_format_opt = click.option(
 entry_format_opt = click.option(
     "--entry-format", type=click.STRING, default="$title", show_default=True
 )
-clean_opt = click.option(
-    "--clean-title", type=click.BOOL, default=True, show_default=True
-)
+clean_opt = click.option("--clean-title", is_flag=True)
+infer_title = click.option("--infer-title", is_flag=True)
 
 
 def is_default_option(param):
@@ -83,13 +82,16 @@ def mark_get_bookmark(db_file, on_selection, dir_format, entry_format):
 @cli.command("insert")
 @db_file_arg
 @dir_format_opt
-def mark_insert_bookmark(db_file, dir_format):
+@infer_title
+def mark_insert_bookmark(db_file, dir_format, infer_title):
     """
     Insert a bookmark
     """
     # TODO: handle multiple files
     asyncio.run(
-        Server.execute_async_server(db_file, mode="write", dir_format=dir_format)
+        Server.execute_async_server(
+            db_file, mode="write", dir_format=dir_format, infer_title=infer_title
+        )
     )
 
 

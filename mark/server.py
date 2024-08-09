@@ -8,35 +8,42 @@ from tinydb import TinyDB
 
 from mark.db import DataBase
 from mark.rofi import Rofi
-from mark.utils import copy_selection, open_selection
+from mark.utils import (
+    copy_selection,
+    decode_message,
+    encode_message,
+    get_url_and_title,
+    open_selection,
+)
 
 
 class Server:
     def __init__(
         self,
-        port: int,
         db: TinyDB,
         mode: str = "read",
         rofi_inst: Rofi = None,
         on_selection: str = None,
-        url: str = None,
+        bookmark: tuple = None,
         entry_format: Template = None,
     ):
         assert mode in ["read", "write"], "mode has to be 'read' or 'write'"
         self.mode = mode
-        self.port = port
         self.rofi = rofi_inst
         self.db = db
         self.on_selection = on_selection
         self.entry_format = entry_format
         # container for selection tracking
-        self.pack = {}
         self.mapping = None
-        if mode == "write":
-            self.pack = {"current": "path", "url": url, "title": None}
+        self.pack = {"current": "path"}
+
+    def update_state(self, **kwargs):
+        if "mapping" in kwargs:
+            self.mapping = kwargs.pop("mapping")
+        self.pack = {**self.pack, **kwargs}
 
     async def __close_connection(self, writer: asyncio.StreamWriter):
-        writer.write("quit".encode("utf8"))
+        writer.write(encode_message("quit"))
         await writer.drain()
 
     async def __handle_root_selection(self, writer: asyncio.StreamWriter, stitle: str):
@@ -70,7 +77,6 @@ class Server:
             "message": url,
         }
         data = self.rofi.update_data(None, **kwargs)
-        print(data)
         writer.write(data)
         await writer.drain()
 
@@ -89,10 +95,8 @@ class Server:
             if self.pack["title"] is None:
                 self.pack["title"] = value
 
-            self.db.insert_bookmark(
-                self.pack["path"], self.pack["title"], self.pack["url"]
-            )
-            await self.__close_connection(writer)
+        self.db.insert_bookmark(self.pack["path"], self.pack["title"], self.pack["url"])
+        await self.__close_connection(writer)
 
     async def __handle_readwrite_mode(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
@@ -102,11 +106,11 @@ class Server:
                 quit()
             try:
                 await asyncio.sleep(0)
-                response = await reader.read(1024)
+                response = await reader.read(4096)
                 # response format -> {"code": return_code, "value": selected_item}
                 if response is None:
                     continue
-                response = json.loads(response.decode("unicode_escape"))
+                response = json.loads(decode_message(response))
                 res_value = response["value"]
                 if self.mode == "read" and not self.db.is_dir(self.mapping[res_value]):
                     await self.__handle_root_selection(writer, res_value)
@@ -119,9 +123,9 @@ class Server:
         writer.close()
         await writer.wait_closed()
 
-    async def run_server(self):
+    async def run_server(self, port):
         server = await asyncio.start_server(
-            self.__handle_readwrite_mode, host="localhost", port=self.port
+            self.__handle_readwrite_mode, host="localhost", port=port
         )
         async with server:
             await server.serve_forever()
@@ -143,30 +147,27 @@ class Server:
         on_selection: str = None,
         dir_format: str = "$title/",
         entry_format: str = "$title",
+        infer_title: bool = False,
     ):
         entry_format_temp = Template(entry_format)
         dir_format_temp = Template(dir_format)
-        url = None
-        if mode == "write":
-            import pyperclip
-
-            url = pyperclip.paste()
         port = Server.get_free_port()
         message = "choose or create dir" if mode == "write" else "choose dir"
         rofi = Rofi(message=f"<b>{message}</b>").setup_client(mode, port)
         db = DataBase(db_file)
         async_server = Server(
-            port,
             db,
             mode=mode,
             rofi_inst=rofi,
             on_selection=on_selection,
-            url=url,
             entry_format=entry_format_temp,
         )
+        if mode == "write":
+            url, title = get_url_and_title(infer_title)
+            async_server.update_state(url=url, title=title)
         # set initial list of items
-        async_server.mapping = db.list_dirs(template=dir_format_temp)
+        async_server.update_state(mapping=db.list_dirs(template=dir_format_temp))
         await asyncio.gather(
             async_server.rofi.open_menu(list(async_server.mapping.keys())),
-            async_server.run_server(),
+            async_server.run_server(port=port),
         )
