@@ -1,6 +1,6 @@
 format:
 	isort mark/
-	black mark/ 
+	black mark/ --preview --enable-unstable-feature string_processing --line-length=88
 
 lint:
 	flake8 mark/ --ignore=E501
