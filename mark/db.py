@@ -1,3 +1,4 @@
+import html
 from string import Template
 from typing import List, Tuple
 
@@ -45,14 +46,16 @@ class DataBase:
         handle = self.db.table(tablename, cache_size=30)
         all_rows = handle.all()
         mapping = {
-            template.safe_substitute(title=row.get("title")): row.get("title")
+            template.safe_substitute(title=html.escape(row.get("title"))): row.get(
+                "title"
+            )
             for row in all_rows
         }
         return mapping
 
     def list_dirs(self, template: Template = Template("$title")) -> List:
         return {
-            template.safe_substitute(title=table): table
+            template.safe_substitute(title=html.escape(table)): table
             for table in self.db.tables()
         }
 
@@ -62,7 +65,7 @@ class DataBase:
 
 def prune_duplicates(db, bookmarks):
     """
-     if the url is already there under table then ignore this bookmark
+    if the url is already there under table then ignore this bookmark
     """
     for table in bookmarks:
         # skip un-necessary calls if the table is not in the db

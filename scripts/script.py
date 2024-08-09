@@ -17,7 +17,7 @@ data = ""
 for option in ["prompt", "message"]:
     env_var = f"ROFI_{option.upper()}"
     if os.getenv(env_var) is not None:
-        line = "\0%s\x1f%s\n" % (option, os.environ[env_var])
+        line = "\x00%s\x1f%s\n" % (option, os.environ[env_var])
         data = concat(data, line)
         del os.environ[env_var]
 
@@ -28,11 +28,13 @@ if os.getenv("ROFI_INIT") is not None and os.getenv("ROFI_DATA") is None:
     # don't allow custom inputs in read mode, only choose from listed items
     if os.environ["ROFI_MODE"] == "read":
         no_custom = "\0no-custom\x1ftrue\n"
-    line = "\0markup-rows\x1ftrue\n\0data\x1f%s\n" % os.environ["ROFI_INIT"]
-    data = concat(data, line, no_custom)
+    markup = "\x00markup-rows\x1ftrue"
+    line = "\x00data\x1f%s\n" % os.environ["ROFI_INIT"]
+    data = concat(data, line, no_custom, markup)
     del os.environ["ROFI_INIT"]
     # send initial list to rofi
     print(data)
+
 
 # there is an item selected
 if len(sys.argv) > 1:
@@ -45,9 +47,9 @@ if len(sys.argv) > 1:
             "value": sys.argv[1],
         }
     )
-    client.send(msg.encode("unicode_escape"))
+    client.send(msg.encode("utf-8"))
     bufsize = 65_535  # maximum buffer size of 64kB
-    received = client.recv(bufsize).decode("unicode_escape")
+    received = client.recv(bufsize).decode("utf-8")
     if received == "quit":
         client.close()
     else:
