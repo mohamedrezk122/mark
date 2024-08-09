@@ -148,13 +148,14 @@ class Server:
         dir_format: str = "$title/",
         entry_format: str = "$title",
         infer_title: bool = False,
+        no_duplicates: bool = False,
     ):
         entry_format_temp = Template(entry_format)
         dir_format_temp = Template(dir_format)
         port = Server.get_free_port()
         message = "choose or create dir" if mode == "write" else "choose dir"
         rofi = Rofi(message=f"<b>{message}</b>").setup_client(mode, port)
-        db = DataBase(db_file)
+        db = DataBase(db_file, no_duplicates=no_duplicates)
         async_server = Server(
             db,
             mode=mode,

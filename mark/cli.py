@@ -84,7 +84,8 @@ def mark_get_bookmark(db_file, on_selection, dir_format, entry_format):
 @db_file_arg
 @dir_format_opt
 @infer_title
-def mark_insert_bookmark(db_file, dir_format, infer_title):
+@no_duplicates
+def mark_insert_bookmark(db_file, dir_format, infer_title, no_duplicates):
     """
     Insert a bookmark
     """
@@ -95,6 +96,7 @@ def mark_insert_bookmark(db_file, dir_format, infer_title):
             mode="write",
             dir_format=dir_format,
             infer_title=infer_title,
+            no_duplicates=no_duplicates,
         )
     )
 
