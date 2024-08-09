@@ -1,6 +1,11 @@
 import os
 import platform
 import subprocess
+from urllib.parse import parse_qsl, unquote_plus, urlparse
+from urllib.request import urlopen
+
+import pyperclip
+from bs4 import BeautifulSoup
 
 
 def copy_selection(title: str, url: str):
@@ -28,7 +33,9 @@ def open_selection(title: str, url: str):
     # Linux or BSD
     try:
         subprocess.Popen(
-            ["xdg-open", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            ["xdg-open", url],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
         )
     except OSError:
         raise RuntimeError("Cannot open default browser")
@@ -40,8 +47,6 @@ async def fetch_html(session, url):
 
 
 async def parse_page_title(html):
-    from bs4 import BeautifulSoup
-
     soup = BeautifulSoup(html, "html.parser")
     return soup.title.string
 
@@ -59,10 +64,6 @@ async def async_infer_url_title(url):
 
 
 def sync_infer_url_title(url):
-    from urllib.request import urlopen
-
-    from bs4 import BeautifulSoup
-
     try:
         soup = BeautifulSoup(urlopen(url, timeout=2), "lxml")
         return soup.title.string
@@ -90,8 +91,6 @@ def decode_message(msg):
 
 
 def get_url_and_title(infer_title):
-    import pyperclip
-
     url, title = pyperclip.paste(), None
     if not infer_title:
         return url, title
@@ -103,8 +102,6 @@ def get_url_and_title(infer_title):
 
 
 def are_urls_equal(url1, url2):
-    from urllib.parse import parse_qsl, unquote_plus, urlparse
-
     def get_url_parts(url):
         parts = urlparse(url)
         query = frozenset(parse_qsl(parts.query))
