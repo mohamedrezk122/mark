@@ -35,7 +35,7 @@ class DataBase:
     def get_bookmark(self, tablename: str, title: str) -> Tuple[str, str]:
         # TODO: handle title bein in path
         handle = self.db.table(tablename)
-        return title, handle.search(Query().title == title)[0]["url"]
+        return title, handle.get(Query().title == title)["url"]
 
     def bookmark_exists_in_table(self, tablename, url):
         handle = self.db.table(tablename)
@@ -45,15 +45,15 @@ class DataBase:
     def list_bookmarks(
         self, tablename: str, template: Template = Template("$title")
     ) -> List:
-        # cache size is unlimited
         handle = self.db.table(tablename, cache_size=30)
         all_rows = handle.all()
-        mapping = {
-            template.safe_substitute(title=html.escape(row.get("title"))): row.get(
-                "title"
-            )
-            for row in all_rows
-        }
+        mapping = {}
+        for row in all_rows:
+            title = row.get("title")
+            if not title:
+                title = row.get("url")
+            _title = template.safe_substitute(title=html.escape(title))
+            mapping[_title] = title
         return mapping
 
     def list_dirs(self, template: Template = Template("$title")) -> List:
