@@ -49,6 +49,9 @@ class BookmarkParser(HTMLParser):
         elif tag == "a":
             folder = self.bookmarks[self.stack[-1]]
             res = clean_bookmark_title(data) if self.clean_title else data
+            if not res:
+                # default title to the url
+                res = folder[-1]["url"]
             folder[-1]["title"] = res
 
     def handle_decl(self, decl):
