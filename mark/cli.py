@@ -37,6 +37,9 @@ dir_format_opt = click.option(
 entry_format_opt = click.option(
     "--entry-format", type=click.STRING, default="$title", show_default=True
 )
+clean_opt = click.option(
+    "--clean-title", type=click.BOOL, default=True, show_default=True
+)
 
 
 def is_default_option(param):
@@ -94,12 +97,13 @@ def mark_insert_bookmark(db_file, dir_format):
 @bookmark_file_arg
 @format_opt
 @output_file_opt
-def mark_import_bookmarks(file, format, output):
+@clean_opt
+def mark_import_bookmarks(file, format, output, clean_title):
     """
     Import bookmarks from other browsers
     """
     if format == "html":
-        bookmarks = parse_netscape_bookmark_file(file)
+        bookmarks = parse_netscape_bookmark_file(file, clean_title)
     else:
         raise NotImplementedError("Not yet implemented for markdown")
 

@@ -68,3 +68,15 @@ def sync_infer_url_title(url):
         return soup.title.string
     except TimeoutError:
         return None
+
+
+def clean_bookmark_title(title):
+    import unicodedata
+
+    return (
+        unicodedata.normalize("NFKD", title)
+        .encode("ascii", "ignore")
+        .decode("ascii")
+        .strip()
+    )
+

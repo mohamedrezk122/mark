@@ -1,6 +1,8 @@
 from collections import defaultdict
 from html.parser import HTMLParser
 
+from mark.utils import clean_bookmark_title
+
 
 class BookmarkParser(HTMLParser):
     """Netscape bookmark file format parser to import bookmarks
@@ -11,6 +13,7 @@ class BookmarkParser(HTMLParser):
     stack = []
     tag_stack = []
     bookmarks = defaultdict(list)
+    clean_title = True
 
     def __get_current_tag(self):
         raw_tag = self.get_starttag_text()
@@ -44,14 +47,17 @@ class BookmarkParser(HTMLParser):
         if tag == "h3":  # folder
             self.stack.append(data)
         elif tag == "a":
-            self.bookmarks[self.stack[-1]][-1]["title"] = data
+            folder = self.bookmarks[self.stack[-1]]
+            res = clean_bookmark_title(data) if self.clean_title else data
+            folder[-1]["title"] = res
 
     def handle_decl(self, decl):
         pass
 
 
-def parse_netscape_bookmark_file(filepath):
+def parse_netscape_bookmark_file(filepath, clean_title):
     parser = BookmarkParser()
+    parser.clean_title = clean_title
     with open(filepath, "r") as file:
         # TODO: split the reading process (not reading the whole file at once)
         content = file.read()
