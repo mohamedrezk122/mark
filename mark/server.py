@@ -95,7 +95,7 @@ class Server:
             if self.pack["title"] is None:
                 self.pack["title"] = value
 
-        self.db.insert_bookmark(self.pack["path"], self.pack["title"], self.pack["url"])
+        self.db.insert_bookmark(self.pack["path"], self.pack["url"], self.pack["title"])
         await self.__close_connection(writer)
 
     async def __handle_readwrite_mode(
