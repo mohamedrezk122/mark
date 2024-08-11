@@ -44,6 +44,7 @@ entry_format_opt = click.option(
 clean_opt = click.option("--clean-title", is_flag=True)
 infer_title = click.option("--infer-title", is_flag=True)
 no_duplicates = click.option("--no-duplicates", is_flag=True)
+force = click.option("--force", is_flag=True)
 
 
 def is_default_option(param):
@@ -130,7 +131,8 @@ def mark_import_bookmarks(file, format, output, clean_title, no_duplicates):
 @db_file_arg
 @format_opt
 @output_file_opt
-def mark_export_bookmarks(db_file, format, output):
+@force
+def mark_export_bookmarks(db_file, format, output, force):
     """
     Export bookmarks to html or markdown
     """
@@ -142,9 +144,9 @@ def mark_export_bookmarks(db_file, format, output):
             output = f"{output}.{format}"
 
     if format == "md":
-        export_bookmarks_to_markdown(db_file, output, heading=3)
+        export_bookmarks_to_markdown(db_file, output, force, heading=3)
     elif format == "html":
-        export_bookmarks_to_html(db_file, output)
+        export_bookmarks_to_html(db_file, output, force)
 
 
 if __name__ == "__main__":

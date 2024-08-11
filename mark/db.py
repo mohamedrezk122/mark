@@ -102,11 +102,13 @@ def save_bookmarks_to_db(bookmarks, db_file, no_duplicates):
         db.insert_multiple(table, bookmarks[table])
 
 
-def export_bookmarks_to_markdown(db_file: str, filepath: str, heading: int):
+def export_bookmarks_to_markdown(
+    db_file: str, filepath: str, force: bool, heading: int
+):
 
     assert 1 <= heading <= 6
-    # use append option "a" to avoid removing current content of the file
-    file = open(filepath, "a+")
+    mode = "w" if force else "a+"
+    file = open(filepath, mode)
     heading_level = "#" * heading
 
     def write_folder(folder_name, rows):
@@ -127,7 +129,7 @@ def export_bookmarks_to_markdown(db_file: str, filepath: str, heading: int):
     file.close()
 
 
-def export_bookmarks_to_html(db_file: str, filepath: str):
+def export_bookmarks_to_html(db_file: str, filepath: str, force: bool):
     header = """
     <!DOCTYPE NETSCAPE-Bookmark-file-1>
     <!--This is an automatically generated file.
@@ -141,7 +143,7 @@ def export_bookmarks_to_html(db_file: str, filepath: str):
     """
     header = "\n".join([line.lstrip() for line in header.split("\n")])
     db = DataBase(db_file)
-    mode = get_proper_write_mode(filepath)
+    mode = "w" if force else get_proper_write_mode(filepath)
     file = open(filepath, mode)
     if mode == "w":
         file.write(header.strip())
