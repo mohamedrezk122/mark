@@ -1,6 +1,8 @@
 import html
+import os
+import time
 from string import Template
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 import orjson
 from tinydb import Query, TinyDB
@@ -41,19 +43,27 @@ class DataBase:
         handle = self.db.table(tablename)
         return handle.contains(Query().url.test(are_urls_equal, url))
 
+    def list_raw_bookmarks(self, tablename: str) -> List:
+        handle = self.db.table(tablename)
+        all_rows = handle.all()
+        for row in all_rows:
+            title, url = row.get("title"), row.get("url")
+            if not title:
+                title = url
+            yield (url, title)
+
     def list_bookmarks(
         self, tablename: str, template: Template = Template("$title")
-    ) -> List:
-        handle = self.db.table(tablename, cache_size=30)
-        all_rows = handle.all()
-        mapping = {}
-        for row in all_rows:
-            title = row.get("title")
-            if not title:
-                title = row.get("url")
+    ) -> Dict:
+        mapping = dict()
+        all_rows = self.list_raw_bookmarks(tablename)
+        for _, title in all_rows:
             _title = template.safe_substitute(title=html.escape(title))
             mapping[_title] = title
         return mapping
+
+    def list_raw_dirs(self):
+        return self.db.tables()
 
     def list_dirs(self, template: Template = Template("$title")) -> List:
         return {
@@ -79,8 +89,6 @@ def prune_duplicates(db, bookmarks):
             bookmark = bookmarks[table][i]
             if not db.bookmark_exists_in_table(table, bookmark["url"]):
                 folder.append(bookmark)
-            else:
-                print("jerer")
         # update folder list
         bookmarks[table] = folder
     return bookmarks
@@ -105,16 +113,14 @@ def export_bookmarks_to_markdown(db_file: str, filepath: str, heading: int):
     def write_folder(folder_name, rows):
         folder_header = f"\n\n\n{heading_level} {folder_name}\n\n\n"
         file.write(folder_header)
-        for row in rows:
-            title = row.get("title")
-            url = row.get("url")
+        for url, title in rows:
             line = f"[{title}]({url})\n\n"
             file.write(line)
 
     db = DataBase(db_file)
-    folders = db.list_dirs()
+    folders = db.list_raw_dirs()
     for folder in folders:
-        all_rows = db.get_table_handle(folder).all()
+        all_rows = db.list_raw_bookmarks(folder)
         write_folder(folder, all_rows)
 
     # force the data to os buffer
