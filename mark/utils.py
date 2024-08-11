@@ -109,3 +109,11 @@ def are_urls_equal(url1, url2):
         parts = parts._replace(query=query, path=path)
 
     return get_url_parts(url1) == get_url_parts(url2)
+
+
+def get_proper_write_mode(filepath):
+    mode = "w"
+    if os.path.exists(filepath):
+        if os.path.getsize(filepath) > 0:
+            mode = "a+"
+    return mode

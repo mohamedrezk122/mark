@@ -3,7 +3,11 @@ import asyncio
 import click
 from click.core import ParameterSource
 
-from mark.db import export_bookmarks_to_markdown, save_bookmarks_to_db
+from mark.db import (
+    export_bookmarks_to_html,
+    export_bookmarks_to_markdown,
+    save_bookmarks_to_db,
+)
 from mark.parser import parse_netscape_bookmark_file
 from mark.server import Server
 
@@ -139,8 +143,8 @@ def mark_export_bookmarks(db_file, format, output):
 
     if format == "md":
         export_bookmarks_to_markdown(db_file, output, heading=3)
-    else:
-        raise NotImplementedError("Not yet implemented for html")
+    elif format == "html":
+        export_bookmarks_to_html(db_file, output)
 
 
 if __name__ == "__main__":

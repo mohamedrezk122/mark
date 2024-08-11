@@ -1,5 +1,4 @@
 import html
-import os
 import time
 from string import Template
 from typing import Dict, List, Tuple
@@ -8,7 +7,7 @@ import orjson
 from tinydb import Query, TinyDB
 
 from mark.storage import FasterJSONStorage, YAMLStorage
-from mark.utils import are_urls_equal
+from mark.utils import are_urls_equal, get_proper_write_mode
 
 
 class DataBase:
@@ -124,5 +123,53 @@ def export_bookmarks_to_markdown(db_file: str, filepath: str, heading: int):
         write_folder(folder, all_rows)
 
     # force the data to os buffer
+    file.flush()
+    file.close()
+
+
+def export_bookmarks_to_html(db_file: str, filepath: str):
+    header = """
+    <!DOCTYPE NETSCAPE-Bookmark-file-1>
+    <!--This is an automatically generated file.
+    It will be read and overwritten.
+    Do Not Edit! -->
+    <Title>Bookmarks</Title>
+    <H1>Bookmarks</H1>
+
+    <DL>
+
+    """
+    header = "\n".join([line.lstrip() for line in header.split("\n")])
+    db = DataBase(db_file)
+    mode = get_proper_write_mode(filepath)
+    file = open(filepath, mode)
+    if mode == "w":
+        file.write(header.strip())
+
+    date = time.time()
+    # common attrs used in all of the entries, better to pull it out of the loop
+    attrs = 'ADD_DATE="{date}" LAST_MODIFIED="{date}" '
+    # used in <A> tag
+    misc = ' ICON_URI="" ICON="" '
+    folder_header = Template(f"<DT><H3 {attrs}> $folder_name</H3>\n\t<DL><p>")
+    folder_footer = "\t</DL><p>\n"
+    bookmark_spec = Template(
+        f"""
+    <DT><A HREF="$url" ADD_DATE="{date}" LAST_VISIT="{date}"
+    LAST_MODIFIED="{date}" {misc}>$title</A>\n"""
+    )
+
+    def write_folder(folder_name, rows):
+        file.write(folder_header.substitute(folder_name=folder_name))
+        for url, title in rows:
+            file.write(bookmark_spec.substitute(url=url, title=title))
+        file.write(folder_footer)
+
+    folders = db.list_dirs()
+    for folder in folders:
+        all_rows = db.list_raw_bookmarks(folder)
+        write_folder(folder, all_rows)
+    # end of file tag
+    file.write("</DL>")
     file.flush()
     file.close()
