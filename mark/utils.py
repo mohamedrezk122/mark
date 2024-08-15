@@ -1,3 +1,4 @@
+import datetime
 import os
 import platform
 import subprocess
@@ -117,3 +118,14 @@ def get_proper_write_mode(filepath):
         if os.path.getsize(filepath) > 0:
             mode = "a+"
     return mode
+
+
+def filter_by_date(epoch_time, start_date, end_date):
+    date = datetime.datetime.fromtimestamp(epoch_time).date()
+    if start_date is not None:
+        if date < start_date.date():
+            return False
+    if end_date is not None:
+        if date > end_date.date():
+            return False
+    return True
