@@ -111,6 +111,11 @@ remove_if_empty = click.option(
         "flag to remove empty folder if they don't contain any bookmarks during import"
     ),
 )
+url_meta = click.option(
+    "--url-meta",
+    is_flag=True,
+    help="use url as a hidden search term to filter bookmarks with",
+)
 
 
 def is_default_option(param):
@@ -135,7 +140,8 @@ def cli():
 @on_selection_opt
 @dir_format_opt
 @entry_format_opt
-def mark_get_bookmark(db_file, on_selection, dir_format, entry_format):
+@url_meta
+def mark_get_bookmark(db_file, on_selection, dir_format, entry_format, url_meta):
     """
     Retrieve a bookmark
     """
@@ -147,6 +153,7 @@ def mark_get_bookmark(db_file, on_selection, dir_format, entry_format):
             on_selection=on_selection,
             dir_format=dir_format,
             entry_format=entry_format,
+            url_meta=url_meta,
         )
     )
 

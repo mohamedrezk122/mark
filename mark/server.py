@@ -26,6 +26,7 @@ class Server:
         on_selection: str = None,
         bookmark: tuple = None,
         entry_format: Template = None,
+        url_meta: bool = False,
     ):
         assert mode in ["read", "write"], "mode has to be 'read' or 'write'"
         self.mode = mode
@@ -36,6 +37,7 @@ class Server:
         # container for selection tracking
         self.mapping = None
         self.pack = {"current": "path"}
+        self.url_meta = url_meta
 
     def update_state(self, **kwargs):
         if "mapping" in kwargs:
@@ -51,20 +53,30 @@ class Server:
             "copy": copy_selection,
             "open": open_selection,
         }
-        stitle = self.mapping[stitle]
-        title, url = self.db.get_bookmark(self.pack["path"], stitle)
+        title = self.mapping[stitle][0]
+        if not self.url_meta:
+            _, url = self.db.get_bookmark(self.pack["path"], title)
+        else:
+            url = self.mapping[stitle][1]
         on_selection_funcs[self.on_selection](title, url)
         await self.__close_connection(writer)
 
     async def __handle_path_selection(self, writer: asyncio.StreamWriter, path: str):
         # TODO: handle hierarchical paths
         self.pack["path"] = self.mapping[path]
-        self.mapping = self.db.list_bookmarks(self.pack["path"], self.entry_format)
+        self.mapping = self.db.list_bookmarks(
+            self.pack["path"], self.entry_format, meta=self.url_meta
+        )
         kwargs = {
             "message": "<b>%s/</b>" % self.pack["path"],
             "markup-rows": "true",
         }
-        data = self.rofi.update_data(list(self.mapping.keys()), **kwargs)
+        if self.url_meta:
+            items = [(title, value[1]) for title, value in self.mapping.items()]
+        else:
+            items = list(self.mapping.keys())
+
+        data = self.rofi.update_data(items, meta=self.url_meta, **kwargs)
         writer.write(data)
         await writer.drain()
 
@@ -112,7 +124,9 @@ class Server:
                     continue
                 response = json.loads(decode_message(response))
                 res_value = response["value"]
-                if self.mode == "read" and not self.db.is_dir(self.mapping[res_value]):
+                entry = self.mapping[res_value]
+                p = entry[0] if len(entry) == 2 else entry
+                if self.mode == "read" and not self.db.is_dir(p):
                     await self.__handle_root_selection(writer, res_value)
                 elif self.mode == "read":
                     await self.__handle_path_selection(writer, res_value)
@@ -149,6 +163,7 @@ class Server:
         entry_format: str = "$title",
         infer_title: bool = False,
         no_duplicates: bool = False,
+        url_meta: bool = False,
     ):
         entry_format_temp = Template(entry_format)
         dir_format_temp = Template(dir_format)
@@ -162,6 +177,7 @@ class Server:
             rofi_inst=rofi,
             on_selection=on_selection,
             entry_format=entry_format_temp,
+            url_meta=url_meta,
         )
         if mode == "write":
             url, title = get_url_and_title(infer_title)

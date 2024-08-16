@@ -114,6 +114,7 @@ class Rofi:
             "-font", f"{self.fontname} {self.fontsize}",
             "-format", self.format,
             "-l", str(self.limit),
+            "-show-icons",
         ]
         if self.mode == "script":
             script_file = (Path(__file__).parents[1]).joinpath("scripts/script.py")
@@ -136,8 +137,13 @@ class Rofi:
             args.append("-hover-select")
         return args
 
-    def itemize(self, items: List, dummy: bool = True) -> str:
-        input_str = self.sep.join(items)
+    def stringify(self, items: List, dummy: bool = True, meta: bool = False) -> str:
+        if not meta:
+            input_str = self.sep.join(items)
+        else:  # for entries only not folders
+            input_str = self.sep.join(
+                [f"{title}\x00meta\x1f{url}" for title, url in items]
+            )
         if not dummy:
             return input_str
         return "".join(["dummy\n", input_str])
@@ -151,7 +157,7 @@ class Rofi:
     ):
         # process communication: send updated data to rofi
         if self.mode == "script":
-            os.environ["ROFI_INIT"] = self.itemize(items)
+            os.environ["ROFI_INIT"] = self.stringify(items)
         if pre_selected_idx is not None:
             # +1 to accommodate the dummy line
             args.extend(["selected-row", str(pre_selected_idx + 1)])
@@ -164,14 +170,22 @@ class Rofi:
         line = f"\x00message\x1f{msg}\n"
         return encode_message(line)
 
-    def update_data(self, items: List = None, **kwargs) -> bytes:
+    def update_data(self, items: List = None, meta: bool = False, **kwargs) -> bytes:
+        """
+        if meta is True, the stringify function will look for the second index of
+        each entry and add it after the `meta` key
+        """
         assert self.mode == "script"
+        rofi_data = "\x00data\x1f%s\n"
         if not items:
-            items = [" "]
-        rofi_data = f"\x00data\x1f{self.itemize(items)}\n"
+            str_items = " "
+        else:
+            str_items = self.stringify(items, meta=meta)
+        rofi_data = rofi_data % str_items
         for option in kwargs:
             line = f"\x00{option}\x1f{kwargs[option]}\n"
             rofi_data = "".join([rofi_data, line])
+        print(rofi_data)
         return encode_message(rofi_data)
 
     async def open_menu(
@@ -186,7 +200,7 @@ class Rofi:
         args = self.__prepare_data(args, items, pre_selected_idx, filter)
         sinput = None
         if self.mode == "dmenu" and items:
-            sinput = encode_message(self.itemize(items, dummy=False))
+            sinput = encode_message(self.stringify(items, dummy=False))
         await self.__start_rofi_process(args, sinput)
 
 

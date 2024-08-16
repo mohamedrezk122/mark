@@ -52,13 +52,20 @@ class DataBase:
             yield (url, title)
 
     def list_bookmarks(
-        self, tablename: str, template: Template = Template("$title")
+        self,
+        tablename: str,
+        template: Template = Template("$title"),
+        meta: bool = False,
     ) -> Dict:
         mapping = dict()
         all_rows = self.list_raw_bookmarks(tablename)
-        for _, title in all_rows:
+        for url, title in all_rows:
             _title = template.safe_substitute(title=html.escape(title))
-            mapping[_title] = title
+            if meta:
+                mapping[_title] = (title, url)
+            else:
+                mapping[_title] = (title,)
+
         return mapping
 
     def list_raw_dirs(self):
