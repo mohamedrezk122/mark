@@ -29,7 +29,8 @@ if os.getenv("ROFI_INIT") is not None and os.getenv("ROFI_DATA") is None:
     if os.environ["ROFI_MODE"] == "read":
         no_custom = "\0no-custom\x1ftrue\n"
     markup = "\x00markup-rows\x1ftrue"
-    line = "\x00data\x1f%s\n" % os.environ["ROFI_INIT"]
+    icons = "\x00icon\x1ffolder"
+    line = "\x00data\x1f%s\n" % "\n".join([f"{item}{icons}" for item in os.environ["ROFI_INIT"].split("\n")])
     data = concat(data, line, no_custom, markup)
     del os.environ["ROFI_INIT"]
     # send initial list to rofi
