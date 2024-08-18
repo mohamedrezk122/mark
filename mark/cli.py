@@ -76,8 +76,8 @@ bookmark_file_arg = click.argument(
     type=click.Path(exists=True),
     # help="bookmark file you want to import from, either markdown or html",
 )
-dir_format_opt = click.option(
-    "--dir-format",
+folder_format_opt = click.option(
+    "--folder-format",
     type=click.STRING,
     default="$title/",
     show_default=True,
@@ -138,10 +138,10 @@ def cli():
 @cli.command("get")
 @db_file_arg
 @on_selection_opt
-@dir_format_opt
+@folder_format_opt
 @entry_format_opt
 @url_meta
-def mark_get_bookmark(db_file, on_selection, dir_format, entry_format, url_meta):
+def mark_get_bookmark(db_file, on_selection, folder_format, entry_format, url_meta):
     """
     Retrieve a bookmark
     """
@@ -151,7 +151,7 @@ def mark_get_bookmark(db_file, on_selection, dir_format, entry_format, url_meta)
             db_file=db_file,
             mode="read",
             on_selection=on_selection,
-            dir_format=dir_format,
+            folder_format=folder_format,
             entry_format=entry_format,
             url_meta=url_meta,
         )
@@ -160,10 +160,10 @@ def mark_get_bookmark(db_file, on_selection, dir_format, entry_format, url_meta)
 
 @cli.command("insert")
 @db_file_write_arg
-@dir_format_opt
+@folder_format_opt
 @infer_title
 @no_duplicates
-def mark_insert_bookmark(db_file, dir_format, infer_title, no_duplicates):
+def mark_insert_bookmark(db_file, folder_format, infer_title, no_duplicates):
     """
     Insert a bookmark
     """
@@ -172,7 +172,7 @@ def mark_insert_bookmark(db_file, dir_format, infer_title, no_duplicates):
         Server.execute_async_server(
             db_file,
             mode="write",
-            dir_format=dir_format,
+            folder_format=folder_format,
             infer_title=infer_title,
             no_duplicates=no_duplicates,
         )

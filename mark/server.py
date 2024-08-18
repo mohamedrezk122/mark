@@ -126,7 +126,7 @@ class Server:
                 res_value = response["value"]
                 entry = self.mapping[res_value]
                 p = entry[0] if len(entry) == 2 else entry
-                if self.mode == "read" and not self.db.is_dir(p):
+                if self.mode == "read" and not self.db.is_folder(p):
                     await self.__handle_root_selection(writer, res_value)
                 elif self.mode == "read":
                     await self.__handle_path_selection(writer, res_value)
@@ -159,16 +159,16 @@ class Server:
         db_file: str,
         mode: str,
         on_selection: str = None,
-        dir_format: str = "$title/",
+        folder_format: str = "$title/",
         entry_format: str = "$title",
         infer_title: bool = False,
         no_duplicates: bool = False,
         url_meta: bool = False,
     ):
         entry_format_temp = Template(entry_format)
-        dir_format_temp = Template(dir_format)
+        folder_format_temp = Template(folder_format)
         port = Server.get_free_port()
-        message = "choose or create dir" if mode == "write" else "choose dir"
+        message = "choose or create folder" if mode == "write" else "choose folder"
         rofi = Rofi(message=f"<b>{message}</b>").setup_client(mode, port)
         db = DataBase(db_file, no_duplicates=no_duplicates)
         async_server = Server(
@@ -183,7 +183,7 @@ class Server:
             url, title = get_url_and_title(infer_title)
             async_server.update_state(url=url, title=title)
         # set initial list of items
-        async_server.update_state(mapping=db.list_dirs(template=dir_format_temp))
+        async_server.update_state(mapping=db.list_folders(template=folder_format_temp))
         await asyncio.gather(
             async_server.rofi.open_menu(list(async_server.mapping.keys())),
             async_server.run_server(port=port),

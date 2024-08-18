@@ -30,7 +30,7 @@ class DataBase:
         handle = self.db.table(table)
         handle.insert_multiple(bookmark)
 
-    def is_dir(self, table: str) -> bool:
+    def is_folder(self, table: str) -> bool:
         return table in self.db.tables()
 
     def get_bookmark(self, tablename: str, title: str) -> Tuple[str, str]:
@@ -68,10 +68,10 @@ class DataBase:
 
         return mapping
 
-    def list_raw_dirs(self):
+    def list_raw_folders(self):
         return self.db.tables()
 
-    def list_dirs(self, template: Template = Template("$title")) -> List:
+    def list_folders(self, template: Template = Template("$title")) -> List:
         return {
             template.safe_substitute(title=html.escape(table)): table
             for table in self.db.tables()
@@ -87,7 +87,7 @@ def prune_duplicates(db, bookmarks):
     """
     for table in bookmarks:
         # skip un-necessary calls if the table is not in the db
-        if not db.is_dir(table):
+        if not db.is_folder(table):
             continue
         folder = []
         n = len(bookmarks[table])
@@ -126,7 +126,7 @@ def export_bookmarks_to_markdown(
             file.write(line)
 
     db = DataBase(db_file)
-    folders = db.list_raw_dirs()
+    folders = db.list_raw_folders()
     for folder in folders:
         all_rows = db.list_raw_bookmarks(folder)
         write_folder(folder, all_rows)
@@ -174,7 +174,7 @@ def export_bookmarks_to_html(db_file: str, filepath: str, force: bool):
             file.write(bookmark_spec.substitute(url=url, title=title))
         file.write(folder_footer)
 
-    folders = db.list_dirs()
+    folders = db.list_folders()
     for folder in folders:
         all_rows = db.list_raw_bookmarks(folder)
         write_folder(folder, all_rows)
