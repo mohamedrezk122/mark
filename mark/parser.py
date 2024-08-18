@@ -6,11 +6,6 @@ from typing import Dict
 from mark.utils import clean_bookmark_title, filter_by_date
 
 
-def filter_attr(attrs, key):
-    query = list(filter(lambda x: x[0] == key, attrs))
-    return query[0][1] if query else None
-
-
 class BookmarkParser(HTMLParser):
     """Netscape bookmark file format parser to import bookmarks
     from other browsers
@@ -38,11 +33,12 @@ class BookmarkParser(HTMLParser):
         self.tag_stack.append(tag)
         if tag != "a":
             return
-        url = filter_attr(attrs, "href")
+        attrs = dict(attrs)
+        url = attrs["href"]
         folder = self.folder_stack[-1]
         self.bookmarks[folder].append({})
         if "date" in self.filters:
-            date = int(filter_attr(attrs, self.date_attr))
+            date = int(attrs[self.date_attr])
             if not self.filters["date"](date):
                 return
         self.bookmarks[folder][-1]["url"] = url
