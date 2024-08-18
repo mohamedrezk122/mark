@@ -8,17 +8,20 @@ version = "0.1.0"
 authors=[
     {name="Mohamed Rezk", email="mohrizq895@gmail.com"}
 ]
-description=""
+description="Mark is a centralized bookmark management utility, written for your own sanity."
 requires-python = ">= 3.4"
 dependencies = [
     "click",
     "pyperclip",
     "PyYAML",
     "tinydb",
+    "bs4",
+    "aiohttp",
+    "orjson",
 ]
 readme = "README.md"
 license = {file = "LICENSE"}
-keywords = ["bookmark"]
+keywords = ["bookmarks"]
 
 [project.urls]
 Documentation = "https://github.com/mohamedrezk122/mark/blob/master/README.md"
