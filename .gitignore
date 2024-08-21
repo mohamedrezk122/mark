@@ -10,3 +10,4 @@ todo.txt
 db*.json
 *.html
 *log
+dist/
