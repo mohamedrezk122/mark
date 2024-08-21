@@ -11,20 +11,20 @@ from mark.utils import are_urls_equal, get_proper_write_mode
 
 
 class DataBase:
-    def __init__(self, filename: str, storage="json", no_duplicates=False):
+    def __init__(self, filename: str, storage="json"):
         if storage == "yaml":
             self.db = TinyDB(filename, indent=4, storage=YAMLStorage)
         else:
             self.db = TinyDB(
                 filename, option=orjson.OPT_INDENT_2, storage=FasterJSONStorage
             )
-        self.no_duplicates = no_duplicates
 
     def insert_bookmark(self, table: str, url: str, title: str):
         handle = self.db.table(table)
-        if self.no_duplicates and self.bookmark_exists_in_table(table):
-            return
-        handle.insert({"title": title, "url": url})
+        # set the default title to url if the user didnot typed a title
+        if title is None or not title.strip():
+            title = url
+        handle.insert({"title": title.strip(), "url": url})
 
     def insert_multiple(self, table: str, bookmark: List):
         handle = self.db.table(table)
