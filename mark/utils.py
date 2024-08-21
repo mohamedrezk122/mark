@@ -108,6 +108,7 @@ def are_urls_equal(url1, url2):
         query = frozenset(parse_qsl(parts.query))
         path = unquote_plus(parts.path)
         parts = parts._replace(query=query, path=path)
+        return parts
 
     return get_url_parts(url1) == get_url_parts(url2)
 
