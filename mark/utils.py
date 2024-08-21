@@ -1,5 +1,6 @@
 import datetime
 import os
+import sys
 import platform
 import subprocess
 from urllib.parse import parse_qsl, unquote_plus, urlparse
@@ -40,7 +41,7 @@ def open_selection(title: str, url: str):
         )
     except OSError:
         raise RuntimeError("Cannot open default browser")
-
+    sys.exit(0)
 
 async def fetch_html(session, url):
     async with session.get(url, timeout=2) as response:
@@ -73,6 +74,7 @@ def sync_infer_url_title(url):
 
 
 def clean_bookmark_title(title):
+    # TODO: handel non-english strings
     import unicodedata
 
     return (

@@ -1,5 +1,6 @@
 import asyncio
 import json
+import sys
 import socket
 from contextlib import closing
 from string import Template
@@ -46,10 +47,12 @@ class Server:
             self.mapping = kwargs.pop("mapping")
         self.pack = {**self.pack, **kwargs}
 
-    async def __close_connection(self, writer: asyncio.StreamWriter):
+    async def __close_connection(self, writer: asyncio.StreamWriter, force=False):
         writer.write(encode_message("quit"))
         await writer.drain()
         self.rofi.kill_proc()
+        if force:
+            sys.exit(0)
 
     async def __handle_root_selection(self, writer: asyncio.StreamWriter, stitle: str):
         on_selection_funcs = {
@@ -105,7 +108,7 @@ class Server:
                 self.pack["folder"], self.pack["url"]
             ):
                 print(f"bookmark is already there under %s" % self.pack["folder"])
-                await self.__close_connection(writer)
+                await self.__close_connection(writer, force=True)
                 return
             if self.pack["title"] is None:
                 self.pack["current"] = "title"
@@ -118,7 +121,7 @@ class Server:
         self.db.insert_bookmark(
             self.pack["folder"], self.pack["url"], self.pack["title"]
         )
-        await self.__close_connection(writer)
+        await self.__close_connection(writer, force=True)
 
     async def __handle_readwrite_mode(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
