@@ -90,6 +90,13 @@ entry_format_opt = click.option(
     show_default=True,
     help="pango formatting str used to change the style of bookmark entry in rofi",
 )
+heading_opt = click.option(
+    "--heading",
+    type=click.IntRange(1,6),
+    default=3,
+    show_default=True,
+    help="folder heading level used in markdown export"
+)
 clean_opt = click.option(
     "--clean-title", is_flag=True, help="flag to enable title cleaning during import"
 )
@@ -227,8 +234,9 @@ def mark_import_bookmarks(
 @db_file_arg
 @format_opt
 @output_file_opt
+@heading_opt
 @force
-def mark_export_bookmarks(db_file, format, output, force):
+def mark_export_bookmarks(db_file, format, output, heading, force):
     """
     Export bookmarks to html or markdown
     """
@@ -240,7 +248,7 @@ def mark_export_bookmarks(db_file, format, output, force):
             output = f"{output}.{format}"
 
     if format == "md":
-        export_bookmarks_to_markdown(db_file, output, force, heading=3)
+        export_bookmarks_to_markdown(db_file, output, force, heading=heading_opt)
     elif format == "html":
         export_bookmarks_to_html(db_file, output, force)
 
