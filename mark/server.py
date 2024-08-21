@@ -27,6 +27,7 @@ class Server:
         bookmark: tuple = None,
         entry_format: Template = None,
         url_meta: bool = False,
+        no_duplicates: bool = False,
     ):
         assert mode in ["read", "write"], "mode has to be 'read' or 'write'"
         self.mode = mode
@@ -36,8 +37,9 @@ class Server:
         self.entry_format = entry_format
         # container for selection tracking
         self.mapping = None
-        self.pack = {"current": "path"}
+        self.pack = {"current": "folder"}
         self.url_meta = url_meta
+        self.no_duplicates = no_duplicates
 
     def update_state(self, **kwargs):
         if "mapping" in kwargs:
@@ -47,6 +49,7 @@ class Server:
     async def __close_connection(self, writer: asyncio.StreamWriter):
         writer.write(encode_message("quit"))
         await writer.drain()
+        self.rofi.kill_proc()
 
     async def __handle_root_selection(self, writer: asyncio.StreamWriter, stitle: str):
         on_selection_funcs = {
@@ -55,20 +58,21 @@ class Server:
         }
         title = self.mapping[stitle][0]
         if not self.url_meta:
-            _, url = self.db.get_bookmark(self.pack["path"], title)
+            _, url = self.db.get_bookmark(self.pack["folder"], title)
         else:
             url = self.mapping[stitle][1]
         on_selection_funcs[self.on_selection](title, url)
         await self.__close_connection(writer)
 
-    async def __handle_path_selection(self, writer: asyncio.StreamWriter, path: str):
-        # TODO: handle hierarchical paths
-        self.pack["path"] = self.mapping[path]
+    async def __handle_folder_selection(
+        self, writer: asyncio.StreamWriter, folder: str
+    ):
+        self.pack["folder"] = self.mapping[folder]
         self.mapping = self.db.list_bookmarks(
-            self.pack["path"], self.entry_format, meta=self.url_meta
+            self.pack["folder"], self.entry_format, meta=self.url_meta
         )
         kwargs = {
-            "message": "<b>%s/</b>" % self.pack["path"],
+            "message": "<b>%s/</b>" % self.pack["folder"],
             "markup-rows": "true",
         }
         if self.url_meta:
@@ -83,7 +87,6 @@ class Server:
     async def __handle_manual_bookmark_title(
         self, writer: asyncio.StreamWriter, url: str
     ):
-        # TODO: handle hierarchical paths
         kwargs = {
             "prompt": "title",
             "message": url,
@@ -95,19 +98,26 @@ class Server:
     async def __handle_bookmark_insertion(
         self, writer: asyncio.StreamWriter, value: str
     ):
-        if self.pack["current"] == "path":
-            # if path is not in mapping then it is new
-            self.pack["path"] = self.mapping.get(value, value)
+        if self.pack["current"] == "folder":
+            # if folder is not in mapping then it is new
+            self.pack["folder"] = self.mapping.get(value, value)
+            if self.no_duplicates and self.db.bookmark_exists_in_table(
+                self.pack["folder"], self.pack["url"]
+            ):
+                print(f"bookmark is already there under %s" % self.pack["folder"])
+                await self.__close_connection(writer)
+                return
             if self.pack["title"] is None:
                 self.pack["current"] = "title"
                 await self.__handle_manual_bookmark_title(writer, self.pack["url"])
                 return
 
         if self.pack["current"] == "title":
-            if self.pack["title"] is None:
-                self.pack["title"] = value
+            self.pack["title"] = value
 
-        self.db.insert_bookmark(self.pack["path"], self.pack["url"], self.pack["title"])
+        self.db.insert_bookmark(
+            self.pack["folder"], self.pack["url"], self.pack["title"]
+        )
         await self.__close_connection(writer)
 
     async def __handle_readwrite_mode(
@@ -124,12 +134,12 @@ class Server:
                     continue
                 response = json.loads(decode_message(response))
                 res_value = response["value"]
-                entry = self.mapping[res_value]
+                entry = self.mapping.get(res_value, res_value)
                 p = entry[0] if len(entry) == 2 else entry
                 if self.mode == "read" and not self.db.is_folder(p):
                     await self.__handle_root_selection(writer, res_value)
                 elif self.mode == "read":
-                    await self.__handle_path_selection(writer, res_value)
+                    await self.__handle_folder_selection(writer, res_value)
                 elif self.mode == "write":
                     await self.__handle_bookmark_insertion(writer, res_value)
             except json.JSONDecodeError:
@@ -170,7 +180,7 @@ class Server:
         port = Server.get_free_port()
         message = "choose or create folder" if mode == "write" else "choose folder"
         rofi = Rofi(message=f"<b>{message}</b>").setup_client(mode, port)
-        db = DataBase(db_file, no_duplicates=no_duplicates)
+        db = DataBase(db_file)
         async_server = Server(
             db,
             mode=mode,
@@ -178,6 +188,7 @@ class Server:
             on_selection=on_selection,
             entry_format=entry_format_temp,
             url_meta=url_meta,
+            no_duplicates=no_duplicates,
         )
         if mode == "write":
             url, title = get_url_and_title(infer_title)
