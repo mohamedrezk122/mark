@@ -60,6 +60,12 @@ class Rofi:
                 " package manager"
             )
 
+    def kill_proc(self):
+        try:
+            self.proc.kill()
+        except OSError:
+            pass
+
     async def __start_rofi_process(
         self, args: List, sinput: List = None, timeout: int = 50
     ) -> Tuple:
@@ -177,15 +183,13 @@ class Rofi:
         """
         assert self.mode == "script"
         rofi_data = "\x00data\x1f%s\n"
-        if not items:
-            str_items = " "
-        else:
-            str_items = self.stringify(items, meta=meta)
+        if items is None:
+            items = [" "]
+        str_items = self.stringify(items, meta=meta)
         rofi_data = rofi_data % str_items
         for option in kwargs:
             line = f"\x00{option}\x1f{kwargs[option]}\n"
             rofi_data = "".join([rofi_data, line])
-        print(rofi_data)
         return encode_message(rofi_data)
 
     async def open_menu(
