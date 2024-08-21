@@ -39,3 +39,9 @@ dev = [
 [project.scripts]
 mark="mark:cli.cli"
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["mark"]
+exclude = []
+namespaces = false
+
